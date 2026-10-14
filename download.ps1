@@ -20,6 +20,7 @@ $statusColor = 'Green'
 $uiWidth = 72
 $menuTop = 0
 $lastMenuWidth = 0
+$videoQuality = 'best'
 
 function Find-Executable([string]$Name, [string[]]$Fallbacks) {
     $command = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -54,7 +55,7 @@ function Write-Header {
     Write-Line ('─' * $uiWidth) 'DarkGray'
 }
 
-function Show-Menu([int]$SelectedIndex = 0, [switch]$Reset) {
+function Start-MenuRender([switch]$Reset) {
     Update-Layout
     if (-not $Preview) {
         if ($Reset -or $lastMenuWidth -ne $uiWidth) {
@@ -65,12 +66,16 @@ function Show-Menu([int]$SelectedIndex = 0, [switch]$Reset) {
         }
         $script:lastMenuWidth = $uiWidth
     }
+}
+
+function Show-Menu([int]$SelectedIndex = 0, [switch]$Reset) {
+    Start-MenuRender -Reset:$Reset
     Write-Line
     Write-Header
     Write-Line
     $items = @(
-        @{ Title = 'Video'; Detail = 'Best quality + audio' },
-        @{ Title = 'MP3 audio'; Detail = '192 kbps' },
+        @{ Title = 'Video'; Detail = (Get-QualityLabel $videoQuality) },
+        @{ Title = 'MP3 audio'; Detail = 'Best audio quality' },
         @{ Title = 'Open downloads'; Detail = '' },
         @{ Title = 'Exit'; Detail = '' }
     )
@@ -90,49 +95,146 @@ function Show-Menu([int]$SelectedIndex = 0, [switch]$Reset) {
     Write-Line '↑/↓ Navigate · Enter Select · Esc Exit' 'DarkGray'
 }
 
-function Get-NextSelection([int]$Current, [ConsoleKey]$Key) {
+function Get-QualityLabel([string]$Quality) {
+    switch ($Quality) {
+        low { return 'Low · 480p target' }
+        normal { return 'Normal · 720p target' }
+        default { return 'Best · Highest available' }
+    }
+}
+
+function Show-QualityMenu([int]$SelectedIndex = 2, [switch]$Reset) {
+    Start-MenuRender -Reset:$Reset
+    Write-Line
+    Write-Header
+    Write-Line
+    Write-Line 'VIDEO QUALITY' 'White'
+    $qualities = @('low', 'normal', 'best')
+    for ($index = 0; $index -lt $qualities.Count; $index++) {
+        $marker = '  '
+        if ($index -eq $SelectedIndex) { $marker = '› ' }
+        Write-Line ($marker + (Get-QualityLabel $qualities[$index])) 'Gray' -Selected:($index -eq $SelectedIndex)
+    }
+    Write-Line
+    Write-Line 'Closest available source quality; no resizing.' 'DarkGray'
+    Write-Line '↑/↓ Navigate · Enter Select · Esc Back' 'DarkGray'
+}
+
+function Get-NextSelection([int]$Current, [ConsoleKey]$Key, [int]$Count = 4) {
     switch ($Key) {
-        UpArrow { return ($Current + 3) % 4 }
-        DownArrow { return ($Current + 1) % 4 }
+        UpArrow { return ($Current + $Count - 1) % $Count }
+        DownArrow { return ($Current + 1) % $Count }
         Home { return 0 }
-        End { return 3 }
+        End { return $Count - 1 }
         default { return $Current }
     }
 }
 
-function Read-MenuSelection([int]$InitialIndex) {
+function Read-MenuSelection([int]$InitialIndex, [switch]$Quality) {
     $selected = $InitialIndex
+    $count = 4
+    if ($Quality) { $count = 3 }
     try {
         [Console]::CursorVisible = $false
-        Show-Menu $selected -Reset
+        if ($Quality) { Show-QualityMenu $selected -Reset }
+        else { Show-Menu $selected -Reset }
         while ($true) {
             $key = [Console]::ReadKey($true)
-            if ($key.Key -eq [ConsoleKey]::Escape) { return 3 }
+            if ($key.Key -eq [ConsoleKey]::Escape) {
+                if ($Quality) { return -1 }
+                return 3
+            }
             if ($key.Key -eq [ConsoleKey]::Enter) { return $selected }
-            $next = Get-NextSelection $selected $key.Key
+            $next = Get-NextSelection $selected $key.Key $count
             if ($key.Key -eq [ConsoleKey]::Tab) {
                 $direction = 1
-                if ($key.Modifiers -band [ConsoleModifiers]::Shift) { $direction = 3 }
-                $next = ($selected + $direction) % 4
+                if ($key.Modifiers -band [ConsoleModifiers]::Shift) { $direction = $count - 1 }
+                $next = ($selected + $direction) % $count
             }
-            if ($next -ne $selected) { $selected = $next; Show-Menu $selected }
+            if ($next -ne $selected) {
+                $selected = $next
+                if ($Quality) { Show-QualityMenu $selected }
+                else { Show-Menu $selected }
+            }
         }
     } finally { [Console]::CursorVisible = $true }
 }
 
-function Show-DownloadScreen([string]$Mode) {
+function Show-DownloadScreen([string]$Mode, [string]$Quality = 'best') {
     Update-Layout
     Clear-Host
     Write-Line
     Write-Header
     Write-Line
-    if ($Mode -eq 'mp3') { Write-Line 'MP3 audio · 192 kbps' 'Cyan' }
-    else { Write-Line 'Video · Best available quality + audio' 'Cyan' }
+    if ($Mode -eq 'mp3') { Write-Line 'MP3 audio · Best audio quality' 'Cyan' }
+    else { Write-Line ('Video · ' + (Get-QualityLabel $Quality)) 'Cyan' }
     Write-Line ('Save to  ' + $outputDir) 'DarkGray'
     Write-Line
     Write-Line 'Paste a link and press Enter.' 'White'
-    Write-Line 'Leave empty to return.' 'DarkGray'
+    Write-Line 'Esc Back · Empty Enter Back' 'DarkGray'
     Write-Host ''
+}
+
+function Read-LinkInput {
+    $text = New-Object Text.StringBuilder
+    $position = 0
+    [Console]::CursorVisible = $true
+    Write-Host '  › Link: ' -NoNewline
+    $anchorLeft = [Console]::CursorLeft
+    $anchorTop = [Console]::CursorTop
+
+    function Update-LinkField {
+        $available = [Math]::Max(1, [Console]::WindowWidth - $anchorLeft - 1)
+        $start = [Math]::Max(0, $position - $available + 1)
+        $visible = $text.ToString().Substring($start, [Math]::Min($available, $text.Length - $start))
+        [Console]::SetCursorPosition($anchorLeft, $anchorTop)
+        [Console]::Write($visible.PadRight($available))
+        [Console]::SetCursorPosition($anchorLeft + $position - $start, $anchorTop)
+    }
+
+    while ($true) {
+        $key = [Console]::ReadKey($true)
+        if ($key.Key -eq [ConsoleKey]::Escape) { [Console]::WriteLine(); return $null }
+        if ($key.Key -eq [ConsoleKey]::Enter) { [Console]::WriteLine(); return $text.ToString().Trim().Trim('"').Trim() }
+        $paste = ($key.Key -eq [ConsoleKey]::V -and ($key.Modifiers -band [ConsoleModifiers]::Control)) -or
+                 ($key.Key -eq [ConsoleKey]::Insert -and ($key.Modifiers -band [ConsoleModifiers]::Shift))
+        if ($paste) {
+            try {
+                $clipboard = Get-Clipboard -Raw -ErrorAction Stop
+                if ($clipboard) {
+                    $clipboard = [regex]::Replace($clipboard, '[\x00-\x1F\x7F]', '')
+                    $text.Insert($position, $clipboard) | Out-Null
+                    $position += $clipboard.Length
+                }
+            } catch { }
+            Update-LinkField
+            continue
+        }
+        switch ($key.Key) {
+            Backspace {
+                if ($position -gt 0) {
+                    $start = $position - 1
+                    if ($key.Modifiers -band [ConsoleModifiers]::Control) {
+                        while ($start -gt 0 -and -not [char]::IsWhiteSpace($text[$start - 1])) { $start-- }
+                    }
+                    $text.Remove($start, $position - $start) | Out-Null
+                    $position = $start
+                }
+            }
+            Delete { if ($position -lt $text.Length) { $text.Remove($position, 1) | Out-Null } }
+            LeftArrow { if ($position -gt 0) { $position-- } }
+            RightArrow { if ($position -lt $text.Length) { $position++ } }
+            Home { $position = 0 }
+            End { $position = $text.Length }
+            default {
+                if (-not [char]::IsControl($key.KeyChar)) {
+                    $text.Insert($position, $key.KeyChar) | Out-Null
+                    $position++
+                }
+            }
+        }
+        Update-LinkField
+    }
 }
 
 function Get-VideoUri([string]$Link) {
@@ -148,21 +250,75 @@ function Get-VideoUri([string]$Link) {
     throw 'Use a YouTube, Instagram, Facebook, or X / Twitter video link.'
 }
 
-function Get-DownloadArguments([string]$Mode, [Uri]$VideoUri) {
+function Get-DownloadArguments([string]$Mode, [Uri]$VideoUri, [string]$Quality = 'best', [string]$Destination = $outputDir) {
+    $suffix = ''
+    if ($Mode -eq 'video' -and $Quality -eq 'low') { $suffix = ' - Low' }
+    if ($Mode -eq 'video' -and $Quality -eq 'normal') { $suffix = ' - Normal' }
+    $fallback = 'Video ' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+    $titleSource = 'title:(?P<vdownload_title>.+)'
+    if ($VideoUri.DnsSafeHost -eq 'instagram.com' -or $VideoUri.DnsSafeHost.EndsWith('.instagram.com')) {
+        $titleSource = 'description:(?P<vdownload_title>[^\r\n]+)'
+        $fallback = 'Instagram video ' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+    }
     $downloadArgs = @('--ignore-config', '--js-runtimes', ('node:' + $node), '--ffmpeg-location', $toolsDir,
-        '--no-playlist', '--windows-filenames', '-P', $outputDir,
-        '-o', '%(title).180B [%(id)s].%(ext)s', '--quiet', '--progress', '--progress-delta', '0.5',
+        '--no-playlist', '--windows-filenames', '-P', $Destination,
+        '--parse-metadata', $titleSource,
+        '--replace-in-metadata', 'vdownload_title', '[^\w\s.-]', '',
+        '--replace-in-metadata', 'vdownload_title', '\s+', ' ',
+        '--replace-in-metadata', 'vdownload_title', '^\s+|\s+$', '',
+        '--replace-in-metadata', 'vdownload_title', '^$', $fallback,
+        '-o', ('%(autonumber)05d__%(vdownload_title|' + $fallback + ').120B' + $suffix + '.%(ext)s'),
+        '--no-overwrites', '--quiet', '--progress', '--progress-delta', '0.5',
         '--progress-template', 'download:  %(progress._percent_str)s | %(progress._speed_str)s | ETA %(progress._eta_str)s',
-        '--progress-template', 'postprocess:  Processing file...',
-        '--print', 'after_move:  Saved: %(filepath)s')
-    if ($Mode -eq 'mp3') { $downloadArgs += @('-x', '--audio-format', 'mp3', '--audio-quality', '192K') }
+        '--progress-template', 'postprocess:  Processing file...')
+    if ($Mode -eq 'mp3') { $downloadArgs += @('-f', 'bestaudio/best', '-x', '--audio-format', 'mp3', '--audio-quality', '0') }
+    elseif ($Quality -eq 'low') { $downloadArgs += @('-S', 'res:480') }
+    elseif ($Quality -eq 'normal') { $downloadArgs += @('-S', 'res:720') }
     return $downloadArgs + @('--', $VideoUri.AbsoluteUri)
+}
+
+function Complete-Download([string]$WorkDir) {
+    $files = @(Get-ChildItem -LiteralPath $WorkDir -File | Where-Object {
+        $_.Name -match '^\d{5,}__' -and $_.Extension -notin @('.part', '.ytdl')
+    })
+    if ($files.Count -eq 0) { throw 'No completed media file was produced.' }
+    foreach ($file in $files) {
+        $name = $file.Name -replace '^\d{5,}__', ''
+        if ($name -match '^(?i:CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])(?:\.|$)') { $name = '_' + $name }
+        $stem = [IO.Path]::GetFileNameWithoutExtension($name)
+        $extension = [IO.Path]::GetExtension($name)
+        $counter = 1
+        while ($true) {
+            $candidate = $name
+            if ($counter -gt 1) { $candidate = $stem + ' (' + $counter + ')' + $extension }
+            $destination = Join-Path $outputDir $candidate
+            try { [IO.File]::Move($file.FullName, $destination); break }
+            catch [IO.IOException] {
+                if (-not (Test-Path -LiteralPath $destination)) { throw }
+                $counter++
+            }
+        }
+        Write-Host ('  Saved: ' + $destination)
+    }
+    if (@(Get-ChildItem -LiteralPath $WorkDir -Force).Count -eq 0) {
+        [IO.Directory]::Delete($WorkDir)
+    }
 }
 
 function Wait-ForMenu {
     Write-Host ''
-    Write-Host '  Enter  Back to menu' -ForegroundColor DarkGray
+    Write-Host '  Enter / Esc  Back to menu' -ForegroundColor DarkGray
     do { $key = [Console]::ReadKey($true) } while ($key.Key -notin @([ConsoleKey]::Enter, [ConsoleKey]::Escape))
+}
+
+function Get-NativeArguments([string[]]$Arguments) {
+    $legacy = $PSVersionTable.PSVersion.Major -le 5
+    $passing = Get-Variable PSNativeCommandArgumentPassing -ErrorAction SilentlyContinue
+    if ($passing -and $passing.Value -eq 'Legacy') { $legacy = $true }
+    foreach ($argument in $Arguments) {
+        if ($legacy -and $argument -eq '') { '""' }
+        else { $argument }
+    }
 }
 
 try {
@@ -190,6 +346,7 @@ try {
     New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
     $Host.UI.RawUI.WindowTitle = 'V DOWNLOAD'
     $selectedIndex = 0
+    $qualityIndex = 2
     while ($true) {
         $selectedIndex = Read-MenuSelection $selectedIndex
         if ($selectedIndex -eq 3) { break }
@@ -199,19 +356,29 @@ try {
         }
         $mode = 'video'
         if ($selectedIndex -eq 1) { $mode = 'mp3' }
-        Show-DownloadScreen $mode
-        $link = (Read-Host '  › Link').Trim().Trim('"').Trim()
+        else {
+            $qualitySelection = Read-MenuSelection $qualityIndex -Quality
+            if ($qualitySelection -lt 0) { continue }
+            $qualityIndex = $qualitySelection
+            $videoQuality = @('low', 'normal', 'best')[$qualityIndex]
+        }
+        Show-DownloadScreen $mode $videoQuality
+        $link = Read-LinkInput
         if ([string]::IsNullOrWhiteSpace($link)) { continue }
         try {
             $videoUri = Get-VideoUri $link
-            $downloadArgs = Get-DownloadArguments $mode $videoUri
+            $workDir = Join-Path ([IO.Path]::GetTempPath()) ('vdownload-' + [Guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $workDir | Out-Null
+            $downloadArgs = Get-DownloadArguments $mode $videoUri $videoQuality $workDir
             Write-Host ''
             Write-Host '  ● Fetching video and downloading...' -ForegroundColor Cyan
             Write-Host ''
-            & $downloader @downloadArgs
+            $nativeArgs = @(Get-NativeArguments $downloadArgs)
+            & $downloader @nativeArgs
             $downloadExit = $LASTEXITCODE
             Write-Host ''
             if ($downloadExit -eq 0) {
+                Complete-Download $workDir
                 $completedDownloads++
                 $status = 'File saved'
                 $statusColor = 'Green'

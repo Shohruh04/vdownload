@@ -9,8 +9,8 @@ Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [FFmpeg](https://ffmpeg.
   YouTube · Instagram · Facebook · X / Twitter
   ─────────────────────────────────────────────
 
-  › Video              Best quality + audio
-    MP3 audio          192 kbps
+  › Video              Best · Highest available
+    MP3 audio          Best audio quality
     Open downloads
     Exit
 
@@ -23,8 +23,10 @@ Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [FFmpeg](https://ffmpeg.
 ## Features
 
 - Compact English interface with a highlighted arrow-key menu.
-- Download the best available video quality with audio.
-- Extract audio as MP3 at 192 kbps.
+- Choose Low (480p target), Normal (720p target), or Best video quality. Best is selected by default.
+- Use the closest available source resolution without resizing. A source may offer no exact 480p or 720p format.
+- Extract the best available audio and encode MP3 with the highest VBR quality setting.
+- Use captions for Instagram filenames and titles elsewhere, without video IDs. Low and Normal variants have separate filename suffixes.
 - Live download progress, speed, and estimated time remaining.
 - Save files to your Windows Downloads folder, including redirected folders.
 - Open Downloads directly from the menu.
@@ -56,7 +58,8 @@ Make the dependency executables available in PATH. V DOWNLOAD also looks in your
 
 2. Double-click **vdownload.cmd** inside the extracted folder.
 3. Choose **Video** or **MP3 audio** with **↑ / ↓**, then press **Enter**.
-4. Paste your video link and press **Enter** to download.
+4. For video, choose **Low**, **Normal**, or **Best** with the arrow keys and Enter.
+5. Paste your video link and press **Enter** to download. Press **Esc** to go back without downloading.
 
 The video container depends on the available source formats. MP3 mode always produces an `.mp3` file.
 
@@ -82,11 +85,11 @@ If your terminal still has an old PATH, use the desktop launcher or this command
 | --- | --- |
 | ↑ / ↓ | Move the selection |
 | Enter | Select an option |
-| Esc | Exit from the main menu |
+| Esc | Go back from quality selection or link entry; exit from the main menu |
 | Empty link + Enter | Return without downloading |
 | Enter after a download | Return to the menu |
 
-The selected format stays selected when you return. Each link downloads individually; YouTube playlist expansion is disabled.
+The selected format and video quality stay selected when you return. Each link downloads individually; YouTube playlist expansion is disabled. Existing output files are not overwritten: duplicate names get a numeric suffix such as `Farqi nimada (2).mp4`. Completed files appear in Downloads after temporary download and processing finish.
 
 ## Troubleshooting
 
@@ -107,4 +110,4 @@ vdownload -Preview
 
 `-Check` verifies dependency discovery. `-Preview` prints the interface without reading keys or downloading anything.
 
-The app has been tested with an Instagram reel in both modes: video at 1080 × 1920 and MP3 at 192 kbps. Both outputs had matching durations and passed a full FFmpeg decode. This does not establish that every URL on every platform works.
+The app has been tested with an Instagram reel in video and MP3 modes. Both outputs had matching durations and passed a full FFmpeg decode. This does not establish that every URL on every platform works. MP3 encoding cannot improve the source audio quality.

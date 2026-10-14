@@ -1,113 +1,206 @@
-# V DOWNLOAD
+<div align="center">
 
-A compact Windows terminal app for downloading videos and MP3 audio from **YouTube, Instagram, Facebook, and X / Twitter**. Choose an option with the arrow keys, press Enter, and paste your link.
+# ◆ V DOWNLOAD
 
-Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [FFmpeg](https://ffmpeg.org/).
+**Download videos and MP3 audio from your terminal.**
 
-```text
-  ◆ V DOWNLOAD
-  YouTube · Instagram · Facebook · X / Twitter
-  ─────────────────────────────────────────────
+YouTube · Instagram · Facebook · X / Twitter
 
-  › Video              Best · Highest available
-    MP3 audio          Best audio quality
-    Open downloads
-    Exit
+Choose with the arrow keys, paste a link, and press Enter.
 
-  Save to  Your Downloads folder
-  ● Ready
+![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?style=flat-square)
+![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-5391FE?style=flat-square)
+![Formats](https://img.shields.io/badge/Downloads-Video%20%2B%20MP3-16C60C?style=flat-square)
 
-  ↑/↓ Navigate · Enter Select · Esc Exit
-```
+[**Download ZIP**](https://github.com/Shohruh04/vdownload/archive/refs/heads/main.zip) · [Quick start](#quick-start) · [Terminal previews](#terminal-previews) · [Controls](#keyboard-controls)
+
+</div>
+
+![V DOWNLOAD main menu with Video selected and MP3 audio available](docs/images/main-menu.png)
 
 ## Features
 
-- Compact English interface with a highlighted arrow-key menu.
-- Choose Low (480p target), Normal (720p target), or Best video quality. Best is selected by default.
-- Use the closest available source resolution without resizing. A source may offer no exact 480p or 720p format.
-- Extract the best available audio and encode MP3 with the highest VBR quality setting.
-- Use captions for Instagram filenames and titles elsewhere, without video IDs. Low and Normal variants have separate filename suffixes.
-- Live download progress, speed, and estimated time remaining.
-- Save files to your Windows Downloads folder, including redirected folders.
-- Open Downloads directly from the menu.
-- Readable error messages and a return to the menu after each download.
-- No website, server, or account registration for the app.
+| Feature | What you get |
+| --- | --- |
+| Four platforms | Video links from YouTube, Instagram, Facebook, and X / Twitter |
+| Video quality | Low, Normal, or Best, with Best selected by default |
+| MP3 audio | Best available source audio and the highest MP3 VBR encoding quality |
+| Simple controls | Arrow-key selection, Enter to confirm, and Esc to go back |
+| Download progress | Percentage, speed, and estimated time remaining |
+| Readable filenames | Instagram captions or video titles, without video IDs |
+| Safe duplicate names | A suffix such as <code>(2)</code> keeps existing files intact |
+| Your Downloads folder | Supports redirected folders and opens them from the menu |
 
-## Requirements
-
-- Windows 10 or 11 with Windows PowerShell 5.1 or later.
-- [Python](https://www.python.org/downloads/windows/) with **yt-dlp** and its recommended dependencies.
-- [FFmpeg and ffprobe](https://ffmpeg.org/download.html), together in the same directory.
-- [Node.js](https://nodejs.org/) for yt-dlp's JavaScript support.
-
-Install or update yt-dlp using the Python installation you want to use:
-
-```powershell
-python -m pip install --upgrade "yt-dlp[default]"
-```
-
-Make the dependency executables available in PATH. V DOWNLOAD also looks in your user-local bin directory and standard per-user Python installation directories. It does not bundle or install third-party dependencies.
+Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [FFmpeg](https://ffmpeg.org/).
 
 ## Quick start
 
-1. Download this repository as a ZIP and extract it, or clone it:
+### 1. Prepare the dependencies
 
-   ```powershell
-   git clone https://github.com/Shohruh04/vdownload.git
-   ```
+V DOWNLOAD runs on **Windows 10 or 11** with **Windows PowerShell 5.1 or later**. Install these components first:
 
-2. Double-click **vdownload.cmd** inside the extracted folder.
-3. Choose **Video** or **MP3 audio** with **↑ / ↓**, then press **Enter**.
-4. For video, choose **Low**, **Normal**, or **Best** with the arrow keys and Enter.
-5. Paste your video link and press **Enter** to download. Press **Esc** to go back without downloading.
+| Dependency | Purpose |
+| --- | --- |
+| [Python](https://www.python.org/downloads/windows/) + [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Retrieve and download media |
+| [FFmpeg and ffprobe](https://ffmpeg.org/download.html) | Merge video and audio, and convert audio to MP3 |
+| [Node.js](https://nodejs.org/) | JavaScript support used by yt-dlp |
 
-The video container depends on the available source formats. MP3 mode always produces an `.mp3` file.
+Install or update yt-dlp with the Python installation you want to use:
 
-## Install the command and desktop launcher
+~~~powershell
+python -m pip install --upgrade "yt-dlp[default]"
+~~~
 
-Double-click **install.cmd**. It copies the app to `%USERPROFILE%\.local\share\vdownload`, creates a **VDownload.cmd** desktop launcher, and adds `%USERPROFILE%\.local\bin` to your user PATH if needed. Administrator permissions are not required.
+Make the executable files available in **PATH**, and keep FFmpeg and ffprobe in the same directory. The app also checks your user-local bin directory and standard per-user Python installation directories.
 
-Reopen your terminal and run:
+**The ZIP contains V DOWNLOAD, not the dependencies.** The installer creates the command and desktop launcher; it does not install Python, yt-dlp, FFmpeg, or Node.js.
 
-```cmd
+### 2. Get the app
+
+[**Download the ZIP**](https://github.com/Shohruh04/vdownload/archive/refs/heads/main.zip) and extract it, or clone the repository:
+
+~~~powershell
+git clone https://github.com/Shohruh04/vdownload.git
+cd vdownload
+~~~
+
+### 3. Launch
+
+Double-click **vdownload.cmd** inside the extracted folder.
+
+For a desktop launcher and the <code>vdownload</code> command, double-click **install.cmd** instead. No administrator permissions are needed. Reopen your terminal, then run:
+
+~~~cmd
 vdownload
-```
+~~~
 
-If your terminal still has an old PATH, use the desktop launcher or this command:
+### 4. Download
 
-```cmd
-"%USERPROFILE%\.local\bin\vdownload.cmd"
-```
+1. Select **Video** or **MP3 audio** with **↑ / ↓**, then press **Enter**.
+2. For video, select **Low**, **Normal**, or **Best**.
+3. Paste the video link and press **Enter**.
+4. Find the completed file in **Downloads**.
 
-## Controls
+Press **Esc** from quality selection or link entry to return to the main menu.
+
+## Terminal previews
+
+*Rendered from the current app's terminal output. The save path shown is an example.*
+
+### Choose video quality
+
+Best is selected by default. Use the arrow keys to change it.
+
+![Video quality menu with Low, Normal, and Best, with Best selected](docs/images/video-quality.png)
+
+| Preset | Resolution preference |
+| --- | --- |
+| **Low** | 480p target |
+| **Normal** | 720p target |
+| **Best — default** | Highest available source quality |
+
+These are source-quality preferences. The app prefers the highest available resolution at or below the target. If none is available, it selects the lowest resolution above it, **without resizing**. For example, a reel with no 480p source may download at 720p in Low mode.
+
+### Paste your link
+
+Paste a link, press Enter, and watch the progress. Esc cancels link entry, including any text already entered.
+
+![Video link entry screen with the save location and Esc Back hint](docs/images/paste-link.png)
+
+MP3 mode skips video-quality selection and uses the best available audio. The MP3 encoder uses its highest VBR quality setting; it cannot improve the original recording.
+
+## Keyboard controls
 
 | Key | Action |
 | --- | --- |
-| ↑ / ↓ | Move the selection |
-| Enter | Select an option |
-| Esc | Go back from quality selection or link entry; exit from the main menu |
-| Empty link + Enter | Return without downloading |
-| Enter after a download | Return to the menu |
+| **↑ / ↓** | Move between menu options |
+| **Enter** | Confirm a selection or start downloading the entered link |
+| **Esc** | Back from quality selection or link entry; exit from the main menu |
+| **Empty link + Enter** | Return without downloading |
+| **Ctrl+V / Shift+Insert** | Paste into the link field |
+| **Enter / Esc after a download** | Return to the menu |
 
-The selected format and video quality stay selected when you return. Each link downloads individually; YouTube playlist expansion is disabled. Existing output files are not overwritten: duplicate names get a numeric suffix such as `Farqi nimada (2).mp4`. Completed files appear in Downloads after temporary download and processing finish.
+Your selected format and video quality stay selected when you return during the same session.
+
+## Files and installation
+
+Completed files go to your Windows **Downloads** folder. Filenames use the first caption line for Instagram and the video title on other platforms:
+
+~~~text
+Farqi nimada.mp4
+Farqi nimada - Normal.mp4
+Farqi nimada.mp3
+Farqi nimada (2).mp4
+~~~
+
+Low and Normal video variants have separate suffixes. Duplicate names receive a number, so existing files are not overwritten. Videos keep the available source container; MP3 mode produces <code>.mp3</code>.
+
+The installer uses:
+
+| Location | Contents |
+| --- | --- |
+| <code>%USERPROFILE%\.local\share\vdownload</code> | Installed app and README |
+| <code>%USERPROFILE%\.local\bin</code> | <code>vdownload.cmd</code> command launcher |
+| Desktop | <code>VDownload.cmd</code> launcher |
+
+The app runs locally. It downloads one submitted link at a time and disables YouTube playlist expansion.
 
 ## Troubleshooting
 
-**Missing dependency:** install the named executable and make it available in PATH, then reopen the terminal. Keep FFmpeg and ffprobe together.
+<details>
+<summary><strong>Missing dependency</strong></summary>
 
-**Download failed:** check the error shown above the message. Platform support depends on the specific URL and current yt-dlp extractors. Private, deleted, region-restricted, or login-required videos may fail. This version does not import browser cookies or account sessions, and it deliberately ignores existing yt-dlp configuration files.
+Install the named component, add its executable directory to PATH, and reopen your terminal. Keep FFmpeg and ffprobe together.
 
-**Site changes:** update yt-dlp with the pip command above. FFmpeg can be updated separately from a Windows build provider linked by the FFmpeg project.
+</details>
 
-**Use a real terminal:** the arrow-key menu requires interactive keyboard input. It cannot be controlled through piped standard input.
+<details>
+<summary><strong>The vdownload command is not recognized</strong></summary>
 
-## Local checks
+Run **install.cmd**, then reopen your terminal. You can also use the desktop launcher or run the installed launcher directly:
 
-```cmd
+~~~cmd
+"%USERPROFILE%\.local\bin\vdownload.cmd"
+~~~
+
+</details>
+
+<details>
+<summary><strong>A link does not download</strong></summary>
+
+Read the error shown in the terminal. Availability depends on the specific URL and the current yt-dlp extractors. Private, deleted, region-restricted, or login-required media may fail.
+
+This version does not import browser cookies or account sessions, and it ignores existing yt-dlp configuration files.
+
+If a platform has changed, update yt-dlp:
+
+~~~powershell
+python -m pip install --upgrade "yt-dlp[default]"
+~~~
+
+</details>
+
+<details>
+<summary><strong>The arrow-key menu does not work with piped input</strong></summary>
+
+Open the app in an interactive terminal window. The menu reads keyboard events directly.
+
+</details>
+
+<details>
+<summary><strong>Check the installation or print a preview</strong></summary>
+
+~~~cmd
 vdownload -Check
 vdownload -Preview
-```
+~~~
 
-`-Check` verifies dependency discovery. `-Preview` prints the interface without reading keys or downloading anything.
+<code>-Check</code> verifies dependency discovery. <code>-Preview</code> prints the main menu without reading keys or downloading media.
 
-The app has been tested with an Instagram reel in video and MP3 modes. Both outputs had matching durations and passed a full FFmpeg decode. This does not establish that every URL on every platform works. MP3 encoding cannot improve the source audio quality.
+</details>
+
+## Verification
+
+An Instagram reel was tested in all three video presets and MP3 mode. All four output files passed a full FFmpeg decode. Keyboard navigation, Esc cancellation, long-link editing, and duplicate filename protection were also checked.
+
+Support for a platform does not guarantee that every URL on that platform can be downloaded.

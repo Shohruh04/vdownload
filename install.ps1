@@ -12,6 +12,17 @@ try {
             Copy-Item -LiteralPath $source -Destination $destination -Force
         }
     }
+    $previewSource = Join-Path $PSScriptRoot 'docs\images'
+    $previewDestination = Join-Path $appDir 'docs\images'
+    if (Test-Path -LiteralPath $previewSource -PathType Container) {
+        New-Item -ItemType Directory -Path $previewDestination -Force | Out-Null
+        foreach ($image in Get-ChildItem -LiteralPath $previewSource -File -Filter '*.png') {
+            $target = Join-Path $previewDestination $image.Name
+            if ($image.FullName -ne [IO.Path]::GetFullPath($target)) {
+                Copy-Item -LiteralPath $image.FullName -Destination $target -Force
+            }
+        }
+    }
 
     $launcher = @'
 @echo off

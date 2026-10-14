@@ -116,7 +116,7 @@ function Show-QualityMenu([int]$SelectedIndex = 2, [switch]$Reset) {
         Write-Line ($marker + (Get-QualityLabel $qualities[$index])) 'Gray' -Selected:($index -eq $SelectedIndex)
     }
     Write-Line
-    Write-Line 'Closest available source quality; no resizing.' 'DarkGray'
+    Write-Line 'Preferred source resolution; no resizing.' 'DarkGray'
     Write-Line '↑/↓ Navigate · Enter Select · Esc Back' 'DarkGray'
 }
 
